@@ -1,0 +1,176 @@
+---
+"Test checker processor check operator string equal":
+  - do:
+      ingest.put_pipeline:
+        id: "pipeline_check_string_equal"
+        body:  >
+          {
+            "description": "_description",
+            "processors": [
+              {
+                "checker" : {
+                  "source_field": "source",
+                  "source_field_type": "string",
+                  "result_field": "result",
+                  "check": {
+                    "operator": "equal",
+                    "argument": "test_value"
+                  }
+                }
+              }
+            ]
+          }
+  - match: { acknowledged: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 101
+        pipeline: "pipeline_check_string_equal"
+        body: {source: "test_value"}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 101
+  - match: { _source.source: "test_value" }
+  - match: { _source.result: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 102
+        pipeline: "pipeline_check_string_equal"
+        body: {source: "not_test_value"}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 102
+  - match: { _source.source: "not_test_value" }
+  - match: { _source.result: false }
+
+---
+"Test checker processor prepare operator split":
+  - do:
+      ingest.put_pipeline:
+        id: "pipeline_prepare_split"
+        body:  >
+          {
+            "description": "_description",
+            "processors": [
+              {
+                "checker" : {
+                  "source_field": "source",
+                  "source_field_type": "string",
+                  "result_field": "result",
+                  "prepare": {
+                    "operator": "split",
+                    "argument": "\\|",
+                    "item": 1
+                  },
+                  "check": {
+                    "operator": "equal",
+                    "argument": "test_value"
+                  }
+                }
+              }
+            ]
+          }
+  - match: { acknowledged: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 203
+        pipeline: "pipeline_prepare_split"
+        body: {source: "not_test_value|test_value"}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 203
+  - match: { _source.source: "not_test_value|test_value" }
+  - match: { _source.result: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 204
+        pipeline: "pipeline_prepare_split"
+        body: {source: "not_test_value|not_test_value"}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 204
+  - match: { _source.source: "not_test_value|not_test_value" }
+  - match: { _source.result: false }
+
+---
+"Test checker processor prepare operator match":
+  - do:
+      ingest.put_pipeline:
+        id: "pipeline_prepare_match"
+        body:  >
+          {
+            "description": "_description",
+            "processors": [
+              {
+                "checker" : {
+                  "source_field": "source",
+                  "source_field_type": "string",
+                  "result_field": "result",
+                  "prepare": {
+                    "operator": "match",
+                    "argument": "^\\d{4}-(test_value)$"
+                  },
+                  "check": {
+                    "operator": "equal",
+                    "argument": "test_value"
+                  }
+                }
+              }
+            ]
+          }
+  - match: { acknowledged: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 205
+        pipeline: "pipeline_prepare_match"
+        body: {source: "1234-test_value"}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 205
+  - match: { _source.source: "1234-test_value" }
+  - match: { _source.result: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 206
+        pipeline: "pipeline_prepare_match"
+        body: {source: "1234-not_test_value"}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 206
+  - match: { _source.source: "1234-not_test_value" }
+  - match: { _source.result: false }
