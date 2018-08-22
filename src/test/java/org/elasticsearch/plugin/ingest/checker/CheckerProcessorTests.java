@@ -30,7 +30,7 @@ import static org.hamcrest.Matchers.is;
 
 public class CheckerProcessorTests extends ESTestCase {
 
-    public void testThatProcessorWorks() throws Exception {
+    public void testThatProcessorWorks() {
         Map<String, Object> document = new HashMap<>();
         document.put("source", "test");
         IngestDocument ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), document);

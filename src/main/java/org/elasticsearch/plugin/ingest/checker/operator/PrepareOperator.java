@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 public class PrepareOperator {
     private Operator operator;
     private String argument;
-    private int item;
+    private Integer item;
 
     enum Operator {
         SPLIT {
@@ -47,15 +47,20 @@ public class PrepareOperator {
         }
     }
 
-    public class InvalidNameException extends IllegalArgumentException {}
+    public static class InvalidNameException extends IllegalArgumentException {}
+    public static class InvalidValueException extends IllegalArgumentException {}
 
-    public PrepareOperator(String name, String argument, int item) {
+    public PrepareOperator(String name, String argument, Integer item) {
         this.operator = Operator.valueOf(name.toUpperCase(Locale.US));
         this.argument = argument;
         this.item = item;
     }
 
-    public Object exec(String value) {
-        return operator.exec(value, argument, item);
+    public Object exec(Object value) {
+        if (!(value instanceof String)) {
+            throw new InvalidValueException();
+        }
+
+        return operator.exec(value.toString(), argument, item);
     }
 }

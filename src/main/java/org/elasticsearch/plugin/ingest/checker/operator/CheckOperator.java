@@ -17,27 +17,37 @@
 
 package org.elasticsearch.plugin.ingest.checker.operator;
 
-//import java.util.regex.Matcher;
-//import java.util.regex.Pattern;
-
+import java.util.ArrayList;
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 public class CheckOperator {
+    private OperatorType type;
     private Operator operator;
     private Object argument;
 
     public static class InvalidTypeException extends IllegalArgumentException {}
     public static class InvalidNameException extends IllegalArgumentException {}
+    public static class InvalidArgumentException extends IllegalArgumentException {}
+    public static class InvalidValueException extends IllegalArgumentException {}
 
     enum OperatorType {
         STRING {
             protected Operator[] getOperators() {
                 return StringOperator.values();
             }
+
+            String getSupportedClassName() {
+                return String.class.getName();
+            }
         },
         INTEGER {
             protected Operator[] getOperators() {
                 return IntegerOperator.values();
+            }
+
+            String getSupportedClassName() {
+                return Integer.class.getName();
             }
         };
 
@@ -64,10 +74,15 @@ public class CheckOperator {
 
             throw new InvalidTypeException();
         }
+
+        String getSupportedClassName() {
+            return Object.class.getName();
+        }
     }
 
     interface Operator {
         Boolean exec(Object value, Object argument);
+        String getArgumentType();
     }
 
     enum StringOperator implements Operator {
@@ -75,35 +90,94 @@ public class CheckOperator {
             public Boolean exec(Object value, Object argument) {
                 return value.toString().equals(argument.toString());
             }
-        };
+        },
+        IN {
+            public Boolean exec(Object value, Object argument) {
+                return ((ArrayList)argument).contains(value);
+            }
 
-        public Boolean exec(Object value, Object argument) {
-            return false;
-        }
-    }
-
-    enum IntegerOperator implements Operator {
-        EQUAL {
-            Boolean exec(Integer value, Integer argument) {
-                return value.equals(argument);
+            public String getArgumentType() {
+                return ArrayList.class.getName();
+            }
+        },
+        MATCH {
+            public Boolean exec(Object value, Object argument) {
+                return Pattern.compile(argument.toString()).matcher(value.toString()).find();
+            }
+        },
+        CONTAINS {
+            public Boolean exec(Object value, Object argument) {
+                return value.toString().contains(argument.toString());
             }
         };
 
         public Boolean exec(Object value, Object argument) {
             return false;
         }
+
+        public String getArgumentType() {
+            return String.class.getName();
+        }
+    }
+
+    enum IntegerOperator implements Operator {
+        EQUAL {
+            public Boolean exec(Object value, Object argument) {
+                return toInteger(value).equals(toInteger(argument));
+            }
+        },
+        IN {
+            public Boolean exec(Object value, Object argument) {
+                return ((ArrayList)argument).contains(value);
+            }
+
+            public String getArgumentType() {
+                return ArrayList.class.getName();
+            }
+        },
+        MORE {
+            public Boolean exec(Object value, Object argument) {
+                return toInteger(value) > toInteger(argument);
+            }
+        },
+        LESS {
+            public Boolean exec(Object value, Object argument) {
+                return toInteger(value) < toInteger(argument);
+            }
+        };
+
+        public Boolean exec(Object value, Object argument) {
+            return false;
+        }
+
+        public String getArgumentType() {
+            return Integer.class.getName();
+        }
+
+        protected Integer toInteger(Object object) {
+            return Integer.valueOf(object.toString());
+        }
     }
 
     public CheckOperator(String type, String name, Object argument) {
-        this.operator = OperatorType.findByName(type).findOperatorByName(name);
+        this.type = OperatorType.findByName(type);
+        this.operator = this.type.findOperatorByName(name);
+
+        if (!this.operator.getArgumentType().equals(argument.getClass().getName())) {
+            throw new InvalidArgumentException();
+        }
         this.argument = argument;
     }
 
-    public Boolean exec(String value) {
-        return operator.exec(value, argument.toString());
-    }
+    public Boolean exec(Object value) {
+        if (value == null) {
+            throw new InvalidValueException();
+        }
 
-    public Boolean exec(Integer value) {
-        return operator.exec(value, Integer.valueOf(argument.toString()));
+        if (!this.type.getSupportedClassName().equals(value.getClass().getName())) {
+            throw new InvalidValueException();
+        }
+
+        return operator.exec(value, argument);
     }
 }

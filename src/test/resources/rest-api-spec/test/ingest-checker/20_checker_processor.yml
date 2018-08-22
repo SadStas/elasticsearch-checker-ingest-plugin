@@ -12,10 +12,8 @@
                   "source_field": "source",
                   "source_field_type": "string",
                   "result_field": "result",
-                  "check": {
-                    "operator": "equal",
-                    "argument": "test_value"
-                  }
+                  "check_operator": "equal",
+                  "check_argument": "test_value"
                 }
               }
             ]
@@ -55,6 +53,384 @@
   - match: { _source.result: false }
 
 ---
+"Test checker processor check operator string in":
+  - do:
+      ingest.put_pipeline:
+        id: "pipeline_check_string_in"
+        body:  >
+          {
+            "description": "_description",
+            "processors": [
+              {
+                "checker" : {
+                  "source_field": "source",
+                  "source_field_type": "string",
+                  "result_field": "result",
+                  "check_operator": "in",
+                  "check_argument": ["test_value", "another_value"]
+                }
+              }
+            ]
+          }
+  - match: { acknowledged: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 110
+        pipeline: "pipeline_check_string_in"
+        body: {source: "test_value"}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 110
+  - match: { _source.source: "test_value" }
+  - match: { _source.result: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 111
+        pipeline: "pipeline_check_string_in"
+        body: {source: "not_test_value"}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 111
+  - match: { _source.source: "not_test_value" }
+  - match: { _source.result: false }
+
+---
+"Test checker processor check operator string match":
+  - do:
+      ingest.put_pipeline:
+        id: "pipeline_check_string_match"
+        body:  >
+          {
+            "description": "_description",
+            "processors": [
+              {
+                "checker" : {
+                  "source_field": "source",
+                  "source_field_type": "string",
+                  "result_field": "result",
+                  "check_operator": "match",
+                  "check_argument": "^test_value$"
+                }
+              }
+            ]
+          }
+  - match: { acknowledged: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 120
+        pipeline: "pipeline_check_string_match"
+        body: {source: "test_value"}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 120
+  - match: { _source.source: "test_value" }
+  - match: { _source.result: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 121
+        pipeline: "pipeline_check_string_match"
+        body: {source: "not_test_value"}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 121
+  - match: { _source.source: "not_test_value" }
+  - match: { _source.result: false }
+
+---
+"Test checker processor check operator string contains":
+  - do:
+      ingest.put_pipeline:
+        id: "pipeline_check_string_contains"
+        body:  >
+          {
+            "description": "_description",
+            "processors": [
+              {
+                "checker" : {
+                  "source_field": "source",
+                  "source_field_type": "string",
+                  "result_field": "result",
+                  "check_operator": "contains",
+                  "check_argument": "true"
+                }
+              }
+            ]
+          }
+  - match: { acknowledged: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 122
+        pipeline: "pipeline_check_string_contains"
+        body: {source: "true_test_value"}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 122
+  - match: { _source.source: "true_test_value" }
+  - match: { _source.result: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 123
+        pipeline: "pipeline_check_string_contains"
+        body: {source: "false_test_value"}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 123
+  - match: { _source.source: "false_test_value" }
+  - match: { _source.result: false }
+
+---
+"Test checker processor check operator integer equal":
+  - do:
+      ingest.put_pipeline:
+        id: "pipeline_check_integer_equal"
+        body:  >
+          {
+            "description": "_description",
+            "processors": [
+              {
+                "checker" : {
+                  "source_field": "source",
+                  "source_field_type": "integer",
+                  "result_field": "result",
+                  "check_operator": "equal",
+                  "check_argument": 1
+                }
+              }
+            ]
+          }
+  - match: { acknowledged: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 130
+        pipeline: "pipeline_check_integer_equal"
+        body: {source: 1}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 130
+  - match: { _source.source: 1 }
+  - match: { _source.result: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 131
+        pipeline: "pipeline_check_integer_equal"
+        body: {source: 2}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 131
+  - match: { _source.source: 2 }
+  - match: { _source.result: false }
+
+---
+"Test checker processor check operator integer in":
+  - do:
+      ingest.put_pipeline:
+        id: "pipeline_check_integer_in"
+        body:  >
+          {
+            "description": "_description",
+            "processors": [
+              {
+                "checker" : {
+                  "source_field": "source",
+                  "source_field_type": "integer",
+                  "result_field": "result",
+                  "check_operator": "in",
+                  "check_argument": [1, 2, 3]
+                }
+              }
+            ]
+          }
+  - match: { acknowledged: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 140
+        pipeline: "pipeline_check_integer_in"
+        body: {source: 1}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 140
+  - match: { _source.source: 1 }
+  - match: { _source.result: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 141
+        pipeline: "pipeline_check_integer_in"
+        body: {source: 4}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 141
+  - match: { _source.source: 4 }
+  - match: { _source.result: false }
+
+---
+"Test checker processor check operator integer more":
+  - do:
+      ingest.put_pipeline:
+        id: "pipeline_check_integer_more"
+        body:  >
+          {
+            "description": "_description",
+            "processors": [
+              {
+                "checker" : {
+                  "source_field": "source",
+                  "source_field_type": "integer",
+                  "result_field": "result",
+                  "check_operator": "more",
+                  "check_argument": 2
+                }
+              }
+            ]
+          }
+  - match: { acknowledged: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 150
+        pipeline: "pipeline_check_integer_more"
+        body: {source: 3}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 150
+  - match: { _source.source: 3 }
+  - match: { _source.result: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 151
+        pipeline: "pipeline_check_integer_more"
+        body: {source: 1}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 151
+  - match: { _source.source: 1 }
+  - match: { _source.result: false }
+
+---
+"Test checker processor check operator integer less":
+  - do:
+      ingest.put_pipeline:
+        id: "pipeline_check_integer_less"
+        body:  >
+          {
+            "description": "_description",
+            "processors": [
+              {
+                "checker" : {
+                  "source_field": "source",
+                  "source_field_type": "integer",
+                  "result_field": "result",
+                  "check_operator": "less",
+                  "check_argument": 2
+                }
+              }
+            ]
+          }
+  - match: { acknowledged: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 160
+        pipeline: "pipeline_check_integer_less"
+        body: {source: 1}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 160
+  - match: { _source.source: 1 }
+  - match: { _source.result: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 161
+        pipeline: "pipeline_check_integer_less"
+        body: {source: 3}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 161
+  - match: { _source.source: 3 }
+  - match: { _source.result: false }
+
+---
 "Test checker processor prepare operator split":
   - do:
       ingest.put_pipeline:
@@ -68,15 +444,11 @@
                   "source_field": "source",
                   "source_field_type": "string",
                   "result_field": "result",
-                  "prepare": {
-                    "operator": "split",
-                    "argument": "\\|",
-                    "item": 1
-                  },
-                  "check": {
-                    "operator": "equal",
-                    "argument": "test_value"
-                  }
+                  "prepare_operator": "split",
+                  "prepare_argument": "\\|",
+                  "prepare_item": 1,
+                  "check_operator": "equal",
+                  "check_argument": "test_value"
                 }
               }
             ]
@@ -87,7 +459,7 @@
       index:
         index: test
         type: test
-        id: 203
+        id: 200
         pipeline: "pipeline_prepare_split"
         body: {source: "not_test_value|test_value"}
 
@@ -95,7 +467,7 @@
       get:
         index: test
         type: test
-        id: 203
+        id: 200
   - match: { _source.source: "not_test_value|test_value" }
   - match: { _source.result: true }
 
@@ -103,7 +475,7 @@
       index:
         index: test
         type: test
-        id: 204
+        id: 201
         pipeline: "pipeline_prepare_split"
         body: {source: "not_test_value|not_test_value"}
 
@@ -111,7 +483,7 @@
       get:
         index: test
         type: test
-        id: 204
+        id: 201
   - match: { _source.source: "not_test_value|not_test_value" }
   - match: { _source.result: false }
 
@@ -129,14 +501,10 @@
                   "source_field": "source",
                   "source_field_type": "string",
                   "result_field": "result",
-                  "prepare": {
-                    "operator": "match",
-                    "argument": "^\\d{4}-(test_value)$"
-                  },
-                  "check": {
-                    "operator": "equal",
-                    "argument": "test_value"
-                  }
+                  "prepare_operator": "match",
+                  "prepare_argument": "^([a-z]*)_test_value$",
+                  "check_operator": "equal",
+                  "check_argument": "true"
                 }
               }
             ]
@@ -147,30 +515,30 @@
       index:
         index: test
         type: test
-        id: 205
+        id: 210
         pipeline: "pipeline_prepare_match"
-        body: {source: "1234-test_value"}
+        body: {source: "true_test_value"}
 
   - do:
       get:
         index: test
         type: test
-        id: 205
-  - match: { _source.source: "1234-test_value" }
+        id: 210
+  - match: { _source.source: "true_test_value" }
   - match: { _source.result: true }
 
   - do:
       index:
         index: test
         type: test
-        id: 206
+        id: 211
         pipeline: "pipeline_prepare_match"
-        body: {source: "1234-not_test_value"}
+        body: {source: "false_test_value"}
 
   - do:
       get:
         index: test
         type: test
-        id: 206
-  - match: { _source.source: "1234-not_test_value" }
+        id: 211
+  - match: { _source.source: "false_test_value" }
   - match: { _source.result: false }

@@ -24,12 +24,12 @@ import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.plugin.ingest.checker.operator.CheckOperator;
 import org.elasticsearch.plugin.ingest.checker.operator.PrepareOperator;
 
-import java.util.Locale;
 import java.util.Map;
 
 import static org.elasticsearch.ingest.ConfigurationUtils.readStringProperty;
-import static org.elasticsearch.ingest.ConfigurationUtils.readMap;
-import static org.elasticsearch.ingest.ConfigurationUtils.readOptionalMap;
+import static org.elasticsearch.ingest.ConfigurationUtils.readOptionalStringProperty;
+import static org.elasticsearch.ingest.ConfigurationUtils.readObject;
+import static org.elasticsearch.ingest.ConfigurationUtils.readIntProperty;
 import static org.elasticsearch.ingest.ConfigurationUtils.newConfigurationException;
 
 public class CheckerProcessor extends AbstractProcessor {
@@ -57,14 +57,18 @@ public class CheckerProcessor extends AbstractProcessor {
     }
 
     @Override
-    public void execute(IngestDocument ingestDocument) throws Exception {
-        String content = ingestDocument.getFieldValue(sourceField, String.class);
+    public void execute(IngestDocument ingestDocument) {
+        try {
+            Object content = ingestDocument.getFieldValue(sourceField, Object.class);
 
-        if (prepareOperator != null) {
-            content = String.valueOf(prepareOperator.exec(content));
+            if (prepareOperator != null) {
+                content = prepareOperator.exec(content);
+            }
+
+            ingestDocument.setFieldValue(resultField, checkOperator.exec(content));
+        } catch (IllegalArgumentException exception) {
+            // do nothing
         }
-
-        ingestDocument.setFieldValue(resultField, checkOperator.exec(content));
     }
 
     @Override
@@ -73,70 +77,63 @@ public class CheckerProcessor extends AbstractProcessor {
     }
 
     public static final class Factory implements Processor.Factory {
-
         private String tag;
+
+        private class Fields {
+            static final String SOURCE = "source_field";
+            static final String RESULT = "result_field";
+            static final String CHECK_OPERATOR = "check_operator";
+            static final String CHECK_OPERATOR_TYPE = "source_field_type";
+            static final String CHECK_ARGUMENT = "check_argument";
+            static final String PREPARE_OPERATOR = "prepare_operator";
+            static final String PREPARE_ARGUMENT = "prepare_argument";
+            static final String PREPARE_ITEM = "prepare_item";
+        }
 
         @Override
         public CheckerProcessor create(Map<String, Processor.Factory> factories,
                                        String tag, Map<String, Object> config) {
             this.tag = tag;
 
-            String sourceField = readStringProperty(TYPE, tag, config, "source_field");
-            String resultField = readStringProperty(TYPE, tag, config, "result_field");
-            String sourceFieldType = readStringProperty(TYPE, tag, config, "source_field_type");
+            String sourceField = readStringProperty(TYPE, tag, config, Fields.SOURCE);
+            String resultField = readStringProperty(TYPE, tag, config, Fields.RESULT);
 
-            Map<String, Object> check = readMap(TYPE, tag, config, "check");
-            CheckOperator checkOperator = this.createCheckOperator(check, sourceFieldType);
+            String checkOperatorType = readStringProperty(TYPE, tag, config, Fields.CHECK_OPERATOR_TYPE);
+            String checkOperatorName = readStringProperty(TYPE, tag, config, Fields.CHECK_OPERATOR);
+            Object checkArgument = readObject(TYPE, tag, config, Fields.CHECK_ARGUMENT);
+            CheckOperator checkOperator = createCheckOperator(checkOperatorType, checkOperatorName, checkArgument);
 
-            Map<String, Object> prepare = readOptionalMap(TYPE, tag, config, "prepare");
-            if (prepare != null) {
-                return new CheckerProcessor(tag, sourceField, resultField, checkOperator, createPrepareConfig(prepare));
+            String prepareOperatorName = readOptionalStringProperty(TYPE, tag, config, Fields.PREPARE_OPERATOR);
+            if (prepareOperatorName != null) {
+                String prepareArgument = readStringProperty(TYPE, tag, config, Fields.PREPARE_ARGUMENT);
+                Integer item = readIntProperty(TYPE, tag, config, Fields.PREPARE_ITEM, 0);
+
+                PrepareOperator prepareOperator = createPrepareOperator(prepareOperatorName, prepareArgument, item);
+
+                return new CheckerProcessor(tag, sourceField, resultField, checkOperator, prepareOperator);
             }
 
             return new CheckerProcessor(tag, sourceField, resultField, checkOperator);
         }
 
-        private CheckOperator createCheckOperator(Map<String, Object> check, String typeName) {
-            if (!check.containsKey("operator")) {
-                throw newConfException("check.operator");
-            }
-            String name = String.valueOf(check.get("operator"));
-
-            if (!check.containsKey("argument")) {
-                throw newConfException("check.argument");
-            }
-            Object argument = check.get("argument");
-
+        private CheckOperator createCheckOperator(String type, String name, Object argument) {
             try {
-                return new CheckOperator(typeName, name, argument);
+                return new CheckOperator(type, name, argument);
             } catch (CheckOperator.InvalidNameException exception) {
-                throw newConfException("check.operator", "unknown operator");
+                throw newConfException(Fields.CHECK_OPERATOR, "unknown operator");
             } catch (CheckOperator.InvalidTypeException exception) {
-                throw newConfException("source_field_type", "unknown type");
+                throw newConfException(Fields.CHECK_OPERATOR_TYPE, "unsupported type");
+            } catch (CheckOperator.InvalidArgumentException exception) {
+                throw newConfException(Fields.CHECK_ARGUMENT, "invalid type");
             }
         }
 
-        private PrepareOperator createPrepareConfig(Map<String, Object> prepare) {
-            if (!prepare.containsKey("operator")) {
-                throw newConfException("prepare.operator");
+        private PrepareOperator createPrepareOperator(String name, String argument, Integer item) {
+            try {
+                return new PrepareOperator(name, argument, item);
+            } catch (PrepareOperator.InvalidNameException exception) {
+                throw newConfException(Fields.PREPARE_OPERATOR, "unknown operator");
             }
-            String name = String.valueOf(prepare.get("operator"));
-
-            if (!(prepare.get("argument") instanceof String)) {
-                throw newConfException("prepare.argument", "required property is missing or isn`t a string");
-            }
-            String argument = prepare.get("argument").toString();
-
-            if (!(prepare.getOrDefault("item", 0) instanceof Integer)) {
-                throw newConfException("prepare.item", "isn`t an integer");
-            }
-            Integer item = Integer.valueOf(prepare.getOrDefault("item", 0).toString());
-
-            return new PrepareOperator(name, argument, item);
-        }
-
-        private ElasticsearchException newConfException(String property) {
-            return this.newConfException(property, "required property is missing");
         }
 
         private ElasticsearchException newConfException(String property, String message) {
