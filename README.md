@@ -76,7 +76,7 @@ GET /my-index/my-type/1
 | check_operator | string | for source_field_type=string: equal, match, contains, in\nfor source_field_type=integer: equal, in, more, less | - |
 | check_argument | string, integer, array | * | - |
 | prepare_operator (optional) | string | match, split | operator to prepare value before check |
-| prepare_argument (optional) | string | * | argument to prepare value before check |
+| prepare_argument (required with prepare_operator) | string | * | argument to prepare value before check |
 | prepare_item (optional) | integer | * | split or match item (0 as default) |
 
 ## Setup
