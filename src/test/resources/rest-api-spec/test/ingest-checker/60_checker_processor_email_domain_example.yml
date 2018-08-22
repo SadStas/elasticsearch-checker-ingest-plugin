@@ -1,0 +1,55 @@
+---
+"Test checker processor check email domain":
+  - do:
+      ingest.put_pipeline:
+        id: "pipeline_check_email_domain"
+        body:  >
+          {
+            "description": "_description",
+            "processors": [
+              {
+                "checker" : {
+                  "source_field": "email",
+                  "source_field_type": "string",
+                  "result_field": "is_email_has_popular_domain",
+                  "prepare_operator": "match",
+                  "prepare_argument": "^\\w*@([\\w\\.]*)$",
+                  "check_operator": "in",
+                  "check_argument": ["yahoo.com", "gmail.com"]
+                }
+              }
+            ]
+          }
+  - match: { acknowledged: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 22345
+        pipeline: "pipeline_check_email_domain"
+        body: {email: "email@gmail.com"}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 22345
+  - match: { _source.email: "email@gmail.com" }
+  - match: { _source.is_email_has_popular_domain: true }
+
+#  - do:
+#      index:
+#        index: test
+#        type: test
+#        id: 223456
+#        pipeline: "pipeline_check_email_domain"
+#        body: {email: "email@email.com"}
+#
+#  - do:
+#      get:
+#        index: test
+#        type: test
+#        id: 223456
+#  - match: { _source.email: "email@email.com" }
+#  - match: { _source.is_email_has_popular_domain: false }

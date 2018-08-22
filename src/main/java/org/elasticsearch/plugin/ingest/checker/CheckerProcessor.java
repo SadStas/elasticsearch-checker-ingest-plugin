@@ -79,7 +79,7 @@ public class CheckerProcessor extends AbstractProcessor {
     public static final class Factory implements Processor.Factory {
         private String tag;
 
-        private class Fields {
+        private static class Fields {
             static final String SOURCE = "source_field";
             static final String RESULT = "result_field";
             static final String CHECK_OPERATOR = "check_operator";
@@ -88,6 +88,16 @@ public class CheckerProcessor extends AbstractProcessor {
             static final String PREPARE_OPERATOR = "prepare_operator";
             static final String PREPARE_ARGUMENT = "prepare_argument";
             static final String PREPARE_ITEM = "prepare_item";
+        }
+
+        private static class Errors {
+            static final String UNKNOWN_OPERATOR = "unknown operator";
+            static final String UNSUPPORTED_TYPE= "unsupported type";
+            static final String INVALID_TYPE = "invalid type";
+        }
+
+        private static class Defaults {
+            static final Integer PREPARE_ITEM = 0;
         }
 
         @Override
@@ -106,7 +116,7 @@ public class CheckerProcessor extends AbstractProcessor {
             String prepareOperatorName = readOptionalStringProperty(TYPE, tag, config, Fields.PREPARE_OPERATOR);
             if (prepareOperatorName != null) {
                 String prepareArgument = readStringProperty(TYPE, tag, config, Fields.PREPARE_ARGUMENT);
-                Integer item = readIntProperty(TYPE, tag, config, Fields.PREPARE_ITEM, 0);
+                Integer item = readIntProperty(TYPE, tag, config, Fields.PREPARE_ITEM, Defaults.PREPARE_ITEM);
 
                 PrepareOperator prepareOperator = createPrepareOperator(prepareOperatorName, prepareArgument, item);
 
@@ -120,11 +130,11 @@ public class CheckerProcessor extends AbstractProcessor {
             try {
                 return new CheckOperator(type, name, argument);
             } catch (CheckOperator.InvalidNameException exception) {
-                throw newConfException(Fields.CHECK_OPERATOR, "unknown operator");
+                throw newConfException(Fields.CHECK_OPERATOR, Errors.UNKNOWN_OPERATOR);
             } catch (CheckOperator.InvalidTypeException exception) {
-                throw newConfException(Fields.CHECK_OPERATOR_TYPE, "unsupported type");
+                throw newConfException(Fields.CHECK_OPERATOR_TYPE, Errors.UNSUPPORTED_TYPE);
             } catch (CheckOperator.InvalidArgumentException exception) {
-                throw newConfException(Fields.CHECK_ARGUMENT, "invalid type");
+                throw newConfException(Fields.CHECK_ARGUMENT, Errors.INVALID_TYPE);
             }
         }
 
@@ -132,7 +142,7 @@ public class CheckerProcessor extends AbstractProcessor {
             try {
                 return new PrepareOperator(name, argument, item);
             } catch (PrepareOperator.InvalidNameException exception) {
-                throw newConfException(Fields.PREPARE_OPERATOR, "unknown operator");
+                throw newConfException(Fields.PREPARE_OPERATOR, Errors.UNKNOWN_OPERATOR);
             }
         }
 

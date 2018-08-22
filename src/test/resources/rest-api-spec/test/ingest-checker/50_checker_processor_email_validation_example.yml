@@ -1,0 +1,53 @@
+---
+"Test checker processor check email by regex":
+  - do:
+      ingest.put_pipeline:
+        id: "pipeline_check_email"
+        body:  >
+          {
+            "description": "_description",
+            "processors": [
+              {
+                "checker" : {
+                  "source_field": "email",
+                  "source_field_type": "string",
+                  "result_field": "is_email_valid",
+                  "check_operator": "match",
+                  "check_argument": "^\\w*@\\w*\\.\\w{2,6}$"
+                }
+              }
+            ]
+          }
+  - match: { acknowledged: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 12345
+        pipeline: "pipeline_check_email"
+        body: {email: "valid@email.com"}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 12345
+  - match: { _source.email: "valid@email.com" }
+  - match: { _source.is_email_valid: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 123456
+        pipeline: "pipeline_check_email"
+        body: {email: "not_valid_email"}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 123456
+  - match: { _source.email: "not_valid_email" }
+  - match: { _source.is_email_valid: false }

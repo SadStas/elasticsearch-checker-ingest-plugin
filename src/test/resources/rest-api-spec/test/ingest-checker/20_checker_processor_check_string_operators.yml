@@ -1,0 +1,215 @@
+---
+"Test checker processor check operator string equal":
+  - do:
+      ingest.put_pipeline:
+        id: "pipeline_check_string_equal"
+        body:  >
+          {
+            "description": "_description",
+            "processors": [
+              {
+                "checker" : {
+                  "source_field": "source",
+                  "source_field_type": "string",
+                  "result_field": "result",
+                  "check_operator": "equal",
+                  "check_argument": "test_value"
+                }
+              }
+            ]
+          }
+  - match: { acknowledged: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 101
+        pipeline: "pipeline_check_string_equal"
+        body: {source: "test_value"}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 101
+  - match: { _source.source: "test_value" }
+  - match: { _source.result: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 102
+        pipeline: "pipeline_check_string_equal"
+        body: {source: "not_test_value"}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 102
+  - match: { _source.source: "not_test_value" }
+  - match: { _source.result: false }
+
+---
+"Test checker processor check operator string in":
+  - do:
+      ingest.put_pipeline:
+        id: "pipeline_check_string_in"
+        body:  >
+          {
+            "description": "_description",
+            "processors": [
+              {
+                "checker" : {
+                  "source_field": "source",
+                  "source_field_type": "string",
+                  "result_field": "result",
+                  "check_operator": "in",
+                  "check_argument": ["test_value", "another_value"]
+                }
+              }
+            ]
+          }
+  - match: { acknowledged: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 110
+        pipeline: "pipeline_check_string_in"
+        body: {source: "test_value"}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 110
+  - match: { _source.source: "test_value" }
+  - match: { _source.result: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 111
+        pipeline: "pipeline_check_string_in"
+        body: {source: "not_test_value"}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 111
+  - match: { _source.source: "not_test_value" }
+  - match: { _source.result: false }
+
+---
+"Test checker processor check operator string match":
+  - do:
+      ingest.put_pipeline:
+        id: "pipeline_check_string_match"
+        body:  >
+          {
+            "description": "_description",
+            "processors": [
+              {
+                "checker" : {
+                  "source_field": "source",
+                  "source_field_type": "string",
+                  "result_field": "result",
+                  "check_operator": "match",
+                  "check_argument": "^test_value$"
+                }
+              }
+            ]
+          }
+  - match: { acknowledged: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 120
+        pipeline: "pipeline_check_string_match"
+        body: {source: "test_value"}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 120
+  - match: { _source.source: "test_value" }
+  - match: { _source.result: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 121
+        pipeline: "pipeline_check_string_match"
+        body: {source: "not_test_value"}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 121
+  - match: { _source.source: "not_test_value" }
+  - match: { _source.result: false }
+
+---
+"Test checker processor check operator string contains":
+  - do:
+      ingest.put_pipeline:
+        id: "pipeline_check_string_contains"
+        body:  >
+          {
+            "description": "_description",
+            "processors": [
+              {
+                "checker" : {
+                  "source_field": "source",
+                  "source_field_type": "string",
+                  "result_field": "result",
+                  "check_operator": "contains",
+                  "check_argument": "true"
+                }
+              }
+            ]
+          }
+  - match: { acknowledged: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 122
+        pipeline: "pipeline_check_string_contains"
+        body: {source: "true_test_value"}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 122
+  - match: { _source.source: "true_test_value" }
+  - match: { _source.result: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 123
+        pipeline: "pipeline_check_string_contains"
+        body: {source: "false_test_value"}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 123
+  - match: { _source.source: "false_test_value" }
+  - match: { _source.result: false }

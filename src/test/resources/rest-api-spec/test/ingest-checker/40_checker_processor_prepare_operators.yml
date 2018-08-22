@@ -1,0 +1,112 @@
+---
+"Test checker processor prepare operator split":
+  - do:
+      ingest.put_pipeline:
+        id: "pipeline_prepare_split"
+        body:  >
+          {
+            "description": "_description",
+            "processors": [
+              {
+                "checker" : {
+                  "source_field": "source",
+                  "source_field_type": "string",
+                  "result_field": "result",
+                  "prepare_operator": "split",
+                  "prepare_argument": "\\|",
+                  "prepare_item": 1,
+                  "check_operator": "equal",
+                  "check_argument": "test_value"
+                }
+              }
+            ]
+          }
+  - match: { acknowledged: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 200
+        pipeline: "pipeline_prepare_split"
+        body: {source: "not_test_value|test_value"}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 200
+  - match: { _source.source: "not_test_value|test_value" }
+  - match: { _source.result: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 201
+        pipeline: "pipeline_prepare_split"
+        body: {source: "not_test_value|not_test_value"}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 201
+  - match: { _source.source: "not_test_value|not_test_value" }
+  - match: { _source.result: false }
+
+---
+"Test checker processor prepare operator match":
+  - do:
+      ingest.put_pipeline:
+        id: "pipeline_prepare_match"
+        body:  >
+          {
+            "description": "_description",
+            "processors": [
+              {
+                "checker" : {
+                  "source_field": "source",
+                  "source_field_type": "string",
+                  "result_field": "result",
+                  "prepare_operator": "match",
+                  "prepare_argument": "^([a-z]*)_test_value$",
+                  "check_operator": "equal",
+                  "check_argument": "true"
+                }
+              }
+            ]
+          }
+  - match: { acknowledged: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 210
+        pipeline: "pipeline_prepare_match"
+        body: {source: "true_test_value"}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 210
+  - match: { _source.source: "true_test_value" }
+  - match: { _source.result: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 211
+        pipeline: "pipeline_prepare_match"
+        body: {source: "false_test_value"}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 211
+  - match: { _source.source: "false_test_value" }
+  - match: { _source.result: false }
