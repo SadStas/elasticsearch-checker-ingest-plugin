@@ -38,7 +38,7 @@ Check email domain is "gmail.com" or "yahoo.com" using prepare operator
 ```
 PUT _ingest/pipeline/email-domain-checker-pipeline
 {
-    "description": "Check is email valid by simple regex",
+    "description": "Check is email domain",
     "processors": [
         {
             "checker" : {
@@ -75,9 +75,9 @@ GET /my-index/my-type/1
 | result_field | string | * | field in document to write boolean result |
 | check_operator | string | for source_field_type=string: equal, match, contains, in\nfor source_field_type=integer: equal, in, more, less | - |
 | check_argument | string, integer, array | * | - |
-| prepare_operator | string | match, split | operator to prepare value before check |
-| prepare_argument | string | * | argument to prepare value before check |
-| prepare_item | integer | * | split or match item (0 as default) |
+| prepare_operator (optional) | string | match, split | operator to prepare value before check |
+| prepare_argument (optional) | string | * | argument to prepare value before check |
+| prepare_item (optional) | integer | * | split or match item (0 as default) |
 
 ## Setup
 
