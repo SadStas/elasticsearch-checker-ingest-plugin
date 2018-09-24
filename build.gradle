@@ -6,12 +6,12 @@ buildscript {
   }
 
   dependencies {
-    classpath "org.elasticsearch.gradle:build-tools:6.2.2"
+    classpath "org.elasticsearch.gradle:build-tools:6.4.1"
   }
 }
 
 group = 'org.elasticsearch.plugin.ingest'
-version = '0.0.1-SNAPSHOT'
+version = '6.4.1'
 
 apply plugin: 'java'
 apply plugin: 'idea'
@@ -36,9 +36,9 @@ esplugin {
 // Note, the two dependencies are not really needed as the buildscript dependency gets them in already
 // they are just here as an example
 dependencies {
-  compile 'org.elasticsearch:elasticsearch:6.2.2'
+  compile 'org.elasticsearch:elasticsearch:6.4.1'
 
-  testCompile 'org.elasticsearch.test:framework:6.2.2'
+  testCompile 'org.elasticsearch.test:framework:6.4.1'
 }
 
 // Set to false to not use elasticsearch checkstyle rules
