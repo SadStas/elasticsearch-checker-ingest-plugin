@@ -92,7 +92,7 @@ This will produce a zip file in `build/distributions`.
 After building the zip file, you can install it like this
 
 ```bash
-bin/elasticsearch-plugin install file:///path/to/ingest-checker/build/distribution/ingest-checker-0.0.1-SNAPSHOT.zip
+bin/elasticsearch-plugin install https://github.com/SadStas/elasticsearch-checker-ingest-plugin/releases/download/6.4.1.0/ingest-checker-6.4.1.zip
 ```
 
 ## Bugs & TODO
