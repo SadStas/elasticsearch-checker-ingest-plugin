@@ -11,7 +11,7 @@ buildscript {
 }
 
 group = 'org.elasticsearch.plugin.ingest'
-version = '0.0.1-SNAPSHOT'
+version = '6.3.1'
 
 apply plugin: 'java'
 apply plugin: 'idea'
