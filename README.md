@@ -16,7 +16,7 @@ PUT _ingest/pipeline/email-checker-pipeline
                 "source_field_type": "string",
                 "result_field": "is_email_valid",
                 "check_operator": "match",
-                "check_argument": "^\\w*@\\w*\\.\\w{2,6}$"
+                "check_argument": "(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$)"
             }
         }
     ]
